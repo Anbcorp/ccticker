@@ -1,0 +1,10 @@
+{
+    "assets": {
+        "BTC": 0.01,
+        "BCH": 0.01,
+        "ETH": 0.1,
+        "LTC": 0.1,
+        "XRP": 10
+    },
+    "currency": "USD"
+}
