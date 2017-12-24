@@ -3,10 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	//	"io/ioutil"
 	"net/http"
-    "os"
-    "strings"
+	"os"
+	"strings"
 )
 
 type TickerResponse struct {
@@ -19,6 +18,11 @@ type TickerResponse struct {
 	Ask       float64 `json:",string"`
 	Timestamp uint64  `json:",string"`
 	Open      float64 `json:",string"`
+}
+
+type Settings struct {
+	Assets   map[string]float64 `json:assets`
+	Currency string             `json:currency`
 }
 
 func getTicker(pair string) (ticker TickerResponse, err error) {
@@ -44,47 +48,48 @@ func getTicker(pair string) (ticker TickerResponse, err error) {
 }
 
 func showAssets(config Settings) {
-    holdings := make(map[string]float64)
+	holdings := make(map[string]float64)
 
-    for asset, units := range(config.Assets) {
-        pair := strings.ToLower(fmt.Sprintf("%s%s", asset, config.Currency))
-        ticker, err := getTicker(pair)
-        if err != nil {
-            fmt.Println(asset, err)
-            continue
-        }
-        holdings[asset] = ticker.Last*units
-    }
+	for asset, units := range config.Assets {
+		pair := strings.ToLower(fmt.Sprintf("%s%s", asset, config.Currency))
+		ticker, err := getTicker(pair)
+		if err != nil {
+			fmt.Println(asset, err)
+			continue
+		}
+		holdings[asset] = ticker.Last * units
+	}
 
-    var total float64
-    for _, value := range(holdings) {
-        total += value
-    }
+	var total float64
+	for _, value := range holdings {
+		total += value
+	}
 
-    fmt.Printf("Total value: $%.2f\n", total)
+	fmt.Printf("Total value: $%.2f\n", total)
 }
 
-type Settings struct {
-    Assets map[string]float64 `json:assets`
-    Currency string `json:currency`
+func getConfig() (config Settings, err error) {
+	configFile, err := os.Open("config.json")
+	if err != nil {
+		fmt.Println("opening config file", err.Error())
+		return
+	}
+	defer configFile.Close()
+
+	err = json.NewDecoder(configFile).Decode(&config)
+	if err != nil {
+		fmt.Println("parsing config file", err.Error())
+		return
+	}
+
+	return
 }
 
 func main() {
-    // then config file settings
-    var config Settings
+	config, err := getConfig()
+	if err != nil {
+		return
+	}
 
-    configFile, err := os.Open("config.json")
-    if err != nil {
-        fmt.Println("opening config file", err.Error())
-    }
-    defer configFile.Close()
-
-    err = json.NewDecoder(configFile).Decode(&config)
-    if err != nil {
-        fmt.Println("parsing config file", err.Error())
-    }
-
-    fmt.Println(config)
-    showAssets(config)
-    return
+	showAssets(config)
 }
